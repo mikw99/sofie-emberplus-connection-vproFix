@@ -220,9 +220,9 @@ export default class S101Codec extends EventEmitter<S101CodecEvents> {
 			if ((flags & FLAG_EMPTY_PACKET) === 0) {
 				// Check if this is a metering packet
 				if (this.isEmberStreamPacket(payload)) {
-					this.handleEmberStreamPacket(payload)
+					this.StreamPacket(payload)
 				} else {
-					this.handleEmberPacket(payload)
+					this.Packet(payload)
 				}
 			}
 		} else {
@@ -240,9 +240,9 @@ export default class S101Codec extends EventEmitter<S101CodecEvents> {
 					const completeData = this.multiPacketBuffer.toBuffer()
 					// Check if this is a stream packet, can also be a normal packet
 					if (completeData[0] === 0x60 && completeData[2] === 0x66) {
-						this.handleEmberStreamPacket(completeData)
+						this.StreamPacket(completeData)
 					} else {
-						this.handleEmberPacket(completeData)
+						this.Packet(completeData)
 					}
 					this.resetMultiPacketBuffer()
 				}
@@ -251,6 +251,11 @@ export default class S101Codec extends EventEmitter<S101CodecEvents> {
 	}
 	private handleEmberPacket(data: Buffer): void {
 		try {
+			        // PATCH: ignore empty / single-byte zero frames from V__pro8
+        if (data.length === 1 && data[0] === 0x00) {
+            debug('Ignoring single 0x00 frame from V__pro8');
+            return
+        }
 			const decoded = berDecode(data)
 			if (data[0] === 0x60) {
 				// Root tag check
